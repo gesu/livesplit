@@ -5,30 +5,30 @@
 $sidebar-button-height: 42px;
 
 .livesplit-container {
-  .sidebar-button {
-    position: fixed;
-    bottom: $ui-margin;
-    left: $ui-margin;
-    z-index: 10;
-    font-size: 24px;
-    padding: 8px;
-    margin: 0;
-    height: $sidebar-button-height;
-  }
-
-  .view-container {
-    position: relative;
-    display: inline-block;
-    vertical-align: top;
-    min-width: calc(100% - 2 * #{$main-content-margin});
-    min-height: calc(100% - 2 * #{$main-content-margin});
-    margin: $main-content-margin;
-
-    @include mobile {
-      display: block;
-      margin: 0 0 ($sidebar-button-height + 2 * $ui-margin) 0;
-      min-width: 100%;
-      min-height: calc(100% - #{$sidebar-button-height + 2 * $ui-margin});
+    .sidebar-button {
+        position: fixed;
+        bottom: $ui-margin;
+        left: $ui-margin;
+        z-index: 10;
+        font-size: 24px;
+        padding: 8px;
+        margin: 0;
+        height: $sidebar-button-height;
     }
-  }
+
+    .view-container {
+        position: relative;
+        display: inline-block;
+        vertical-align: top;
+        min-width: calc(100% - 2 * #{$main-content-margin});
+        min-height: calc(100% - 2 * #{$main-content-margin});
+        margin: $main-content-margin;
+
+        @include mobile {
+            display: block;
+            margin: 0 0 ($sidebar-button-height + 2 * $ui-margin) 0;
+            min-width: 100%;
+            min-height: calc(100% - #{$sidebar-button-height + 2 * $ui-margin});
+        }
+    }
 }

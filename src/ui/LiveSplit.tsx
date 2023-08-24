@@ -1,25 +1,39 @@
-import * as React from "react";
-import Sidebar from "react-sidebar";
+import * as React from 'react';
+import Sidebar from 'react-sidebar';
 import {
-    HotkeySystem, Layout, LayoutEditor, Run, RunEditor,
-    Segment, SharedTimer, Timer, TimerRef, TimerRefMut,
-    HotkeyConfig, LayoutState,
-} from "../livesplit-core";
-import { convertFileToArrayBuffer, convertFileToString, exportFile, openFileAsString } from "../util/FileUtil";
-import { Option, assertNull, expect, maybeDisposeAndThen, panic } from "../util/OptionUtil";
-import * as SplitsIO from "../util/SplitsIO";
-import { LayoutEditor as LayoutEditorComponent } from "./LayoutEditor";
-import { RunEditor as RunEditorComponent } from "./RunEditor";
-import { SettingsEditor as SettingsEditorComponent } from "./SettingsEditor";
-import { TimerView } from "./TimerView";
-import { About } from "./About";
-import { SplitsSelection, EditingInfo } from "./SplitsSelection";
-import { LayoutView } from "./LayoutView";
-import { toast } from "react-toastify";
-import * as Storage from "../storage";
+    HotkeySystem,
+    Layout,
+    LayoutEditor,
+    Run,
+    RunEditor,
+    Segment,
+    SharedTimer,
+    Timer,
+    TimerRef,
+    TimerRefMut,
+    HotkeyConfig,
+    LayoutState,
+} from '../livesplit-core';
+import {
+    convertFileToArrayBuffer,
+    convertFileToString,
+    exportFile,
+    openFileAsString,
+} from '../util/FileUtil';
+import { Option, assertNull, expect, maybeDisposeAndThen, panic } from '../util/OptionUtil';
+import * as SplitsIO from '../util/SplitsIO';
+import { LayoutEditor as LayoutEditorComponent } from './LayoutEditor';
+import { RunEditor as RunEditorComponent } from './RunEditor';
+import { SettingsEditor as SettingsEditorComponent } from './SettingsEditor';
+import { TimerView } from './TimerView';
+import { About } from './About';
+import { SplitsSelection, EditingInfo } from './SplitsSelection';
+import { LayoutView } from './LayoutView';
+import { toast } from 'react-toastify';
+import * as Storage from '../storage';
 
-import "react-toastify/dist/ReactToastify.css";
-import "../css/LiveSplit.scss";
+import 'react-toastify/dist/ReactToastify.css';
+import '../css/LiveSplit.scss';
 
 export enum MenuKind {
     Timer,
@@ -32,35 +46,35 @@ export enum MenuKind {
 }
 
 type Menu =
-    { kind: MenuKind.Timer } |
-    { kind: MenuKind.Splits } |
-    { kind: MenuKind.RunEditor, editor: RunEditor, splitsKey?: number } |
-    { kind: MenuKind.Layout } |
-    { kind: MenuKind.LayoutEditor, editor: LayoutEditor } |
-    { kind: MenuKind.SettingsEditor, config: HotkeyConfig } |
-    { kind: MenuKind.About };
+    | { kind: MenuKind.Timer }
+    | { kind: MenuKind.Splits }
+    | { kind: MenuKind.RunEditor; editor: RunEditor; splitsKey?: number }
+    | { kind: MenuKind.Layout }
+    | { kind: MenuKind.LayoutEditor; editor: LayoutEditor }
+    | { kind: MenuKind.SettingsEditor; config: HotkeyConfig }
+    | { kind: MenuKind.About };
 
 export interface Props {
-    splits?: Uint8Array,
-    layout?: Storage.LayoutSettings,
-    hotkeys?: Storage.HotkeyConfigSettings,
-    layoutWidth: number,
-    splitsKey?: number,
+    splits?: Uint8Array;
+    layout?: Storage.LayoutSettings;
+    hotkeys?: Storage.HotkeyConfigSettings;
+    layoutWidth: number;
+    splitsKey?: number;
 }
 
 export interface State {
-    hotkeySystem: HotkeySystem,
-    isBrowserSource: boolean,
-    isDesktop: boolean,
-    layout: Layout,
-    layoutState: LayoutState,
-    layoutWidth: number,
-    menu: Menu,
-    openedSplitsKey?: number,
-    sidebarOpen: boolean,
-    sidebarTransitionsEnabled: boolean,
-    storedLayoutWidth: number,
-    timer: SharedTimer,
+    hotkeySystem: HotkeySystem;
+    isBrowserSource: boolean;
+    isDesktop: boolean;
+    layout: Layout;
+    layoutState: LayoutState;
+    layoutWidth: number;
+    menu: Menu;
+    openedSplitsKey?: number;
+    sidebarOpen: boolean;
+    sidebarTransitionsEnabled: boolean;
+    storedLayoutWidth: number;
+    timer: SharedTimer;
 }
 
 export let hotkeySystem: Option<HotkeySystem> = null;
@@ -82,7 +96,7 @@ export class LiveSplit extends React.Component<Props, State> {
         };
     }
 
-    private isDesktopQuery = window.matchMedia("(min-width: 600px)");
+    private isDesktopQuery = window.matchMedia('(min-width: 600px)');
     private containerRef: React.RefObject<HTMLDivElement>;
     private scrollEvent: Option<EventListenerObject>;
     private rightClickEvent: Option<EventListenerObject>;
@@ -92,10 +106,7 @@ export class LiveSplit extends React.Component<Props, State> {
         super(props);
 
         const run = this.getDefaultRun();
-        const timer = expect(
-            Timer.new(run),
-            "The Default Run should be a valid Run",
-        ).intoShared();
+        const timer = expect(Timer.new(run), 'The Default Run should be a valid Run').intoShared();
 
         const hotkeys = props.hotkeys;
         try {
@@ -105,7 +116,9 @@ export class LiveSplit extends React.Component<Props, State> {
                     hotkeySystem = HotkeySystem.withConfig(timer.share(), config);
                 }
             }
-        } catch (_) { /* Looks like the storage has no valid data */ }
+        } catch (_) {
+            /* Looks like the storage has no valid data */
+        }
         if (hotkeySystem == null) {
             hotkeySystem = expect(
                 HotkeySystem.new(timer.share()),
@@ -113,20 +126,23 @@ export class LiveSplit extends React.Component<Props, State> {
             );
         }
 
-        if (window.location.hash.indexOf("#/splits-io/") === 0) {
+        if (window.location.hash.indexOf('#/splits-io/') === 0) {
             const loadingRun = Run.new();
-            loadingRun.setGameName("Loading...");
-            loadingRun.setCategoryName("Loading...");
-            loadingRun.pushSegment(Segment.new("Time"));
+            loadingRun.setGameName('Loading...');
+            loadingRun.setCategoryName('Loading...');
+            loadingRun.pushSegment(Segment.new('Time'));
             assertNull(
-                timer.writeWith((t) => t.setRun(loadingRun)),
-                "The Default Loading Run should be a valid Run",
+                timer.writeWith(t => t.setRun(loadingRun)),
+                'The Default Loading Run should be a valid Run',
             );
-            this.loadFromSplitsIO(window.location.hash.substr("#/splits-io/".length));
+            this.loadFromSplitsIO(window.location.hash.substr('#/splits-io/'.length));
         } else if (props.splits !== undefined) {
-            Run.parseArray(props.splits, "").with((result) => {
+            Run.parseArray(props.splits, '').with(result => {
                 if (result.parsedSuccessfully()) {
-                    result.unwrap().with((r) => timer.writeWith((t) => t.setRun(r)))?.dispose();
+                    result
+                        .unwrap()
+                        .with(r => timer.writeWith(t => t.setRun(r)))
+                        ?.dispose();
                 }
             });
         }
@@ -137,7 +153,9 @@ export class LiveSplit extends React.Component<Props, State> {
             if (data !== undefined) {
                 layout = Layout.parseJson(data);
             }
-        } catch (_) { /* Looks like the storage has no valid data */ }
+        } catch (_) {
+            /* Looks like the storage has no valid data */
+        }
         if (layout === null) {
             layout = Layout.defaultLayout();
         }
@@ -167,25 +185,28 @@ export class LiveSplit extends React.Component<Props, State> {
 
     public componentDidMount() {
         this.scrollEvent = { handleEvent: (e: WheelEvent) => this.onScroll(e) };
-        window.addEventListener("wheel", this.scrollEvent);
-        this.rightClickEvent = { handleEvent: (e: any) => this.onRightClick(e) };
-        window.addEventListener("contextmenu", this.rightClickEvent, false);
+        window.addEventListener('wheel', this.scrollEvent);
+        this.rightClickEvent = {
+            handleEvent: (e: any) => this.onRightClick(e),
+        };
+        window.addEventListener('contextmenu', this.rightClickEvent, false);
         this.resizeEvent = { handleEvent: () => this.handleAutomaticResize() };
-        window.addEventListener("resize", this.resizeEvent, false);
+        window.addEventListener('resize', this.resizeEvent, false);
 
         window.onbeforeunload = (e: BeforeUnloadEvent) => {
-            const hasBeenModified = this.readWith((t) => t.getRun().hasBeenModified());
+            const hasBeenModified = this.readWith(t => t.getRun().hasBeenModified());
             if (hasBeenModified) {
-                e.returnValue = "There are unsaved changes. Do you really want to close LiveSplit One?";
+                e.returnValue =
+                    'There are unsaved changes. Do you really want to close LiveSplit One?';
                 return e.returnValue;
             }
             return null;
         };
 
-        this.isDesktopQuery.addEventListener("change", this.mediaQueryChanged);
+        this.isDesktopQuery.addEventListener('change', this.mediaQueryChanged);
 
         if (this.state.isBrowserSource) {
-            document.body.className = "browser-source";
+            document.body.className = 'browser-source';
         }
 
         this.handleAutomaticResize();
@@ -197,102 +218,101 @@ export class LiveSplit extends React.Component<Props, State> {
 
     public componentWillUnmount() {
         window.removeEventListener(
-            "wheel",
-            expect(this.scrollEvent, "A Scroll Event should exist"),
+            'wheel',
+            expect(this.scrollEvent, 'A Scroll Event should exist'),
         );
         window.removeEventListener(
-            "contextmenu",
-            expect(this.rightClickEvent, "A Right Click Event should exist"),
+            'contextmenu',
+            expect(this.rightClickEvent, 'A Right Click Event should exist'),
         );
         window.removeEventListener(
-            "resize",
-            expect(this.resizeEvent, "A Resize Event should exist"),
+            'resize',
+            expect(this.resizeEvent, 'A Resize Event should exist'),
         );
         this.state.timer.dispose();
         this.state.layout.dispose();
         this.state.layoutState.dispose();
         this.state.hotkeySystem?.dispose();
-        this.isDesktopQuery.removeEventListener("change", this.mediaQueryChanged);
+        this.isDesktopQuery.removeEventListener('change', this.mediaQueryChanged);
     }
 
     public render() {
         if (this.state.menu.kind === MenuKind.RunEditor) {
-            return <RunEditorComponent
-                editor={this.state.menu.editor}
-                callbacks={this}
-            />;
+            return <RunEditorComponent editor={this.state.menu.editor} callbacks={this} />;
         } else if (this.state.menu.kind === MenuKind.LayoutEditor) {
-            return <LayoutEditorComponent
-                editor={this.state.menu.editor}
-                layoutWidth={this.state.layoutWidth}
-                timer={this.state.timer}
-                callbacks={this}
-            />;
+            return (
+                <LayoutEditorComponent
+                    editor={this.state.menu.editor}
+                    layoutWidth={this.state.layoutWidth}
+                    timer={this.state.timer}
+                    callbacks={this}
+                />
+            );
         } else if (this.state.menu.kind === MenuKind.SettingsEditor) {
-            return <SettingsEditorComponent
-                hotkeyConfig={this.state.menu.config}
-                callbacks={this}
-            />;
+            return (
+                <SettingsEditorComponent hotkeyConfig={this.state.menu.config} callbacks={this} />
+            );
         } else if (this.state.menu.kind === MenuKind.About) {
             return <About callbacks={this} />;
         } else if (this.state.menu.kind === MenuKind.Splits) {
-            return <SplitsSelection
-                timer={this.state.timer}
-                openedSplitsKey={this.state.openedSplitsKey}
-                callbacks={this}
-            />;
+            return (
+                <SplitsSelection
+                    timer={this.state.timer}
+                    openedSplitsKey={this.state.openedSplitsKey}
+                    callbacks={this}
+                />
+            );
         } else if (this.state.menu.kind === MenuKind.Timer) {
-            return <TimerView
-                layout={this.state.layout}
-                layoutState={this.state.layoutState}
-                layoutWidth={this.state.layoutWidth}
-                isDesktop={this.state.isDesktop}
-                renderWithSidebar={true}
-                sidebarOpen={this.state.sidebarOpen}
-                timer={this.state.timer}
-                callbacks={this}
-            />;
+            return (
+                <TimerView
+                    layout={this.state.layout}
+                    layoutState={this.state.layoutState}
+                    layoutWidth={this.state.layoutWidth}
+                    isDesktop={this.state.isDesktop}
+                    renderWithSidebar={true}
+                    sidebarOpen={this.state.sidebarOpen}
+                    timer={this.state.timer}
+                    callbacks={this}
+                />
+            );
         } else if (this.state.menu.kind === MenuKind.Layout) {
-            return <LayoutView
-                layout={this.state.layout}
-                layoutState={this.state.layoutState}
-                layoutWidth={this.state.layoutWidth}
-                isDesktop={this.state.isDesktop}
-                renderWithSidebar={true}
-                sidebarOpen={this.state.sidebarOpen}
-                timer={this.state.timer}
-                callbacks={this}
-            />;
+            return (
+                <LayoutView
+                    layout={this.state.layout}
+                    layoutState={this.state.layoutState}
+                    layoutWidth={this.state.layoutWidth}
+                    isDesktop={this.state.isDesktop}
+                    renderWithSidebar={true}
+                    sidebarOpen={this.state.sidebarOpen}
+                    timer={this.state.timer}
+                    callbacks={this}
+                />
+            );
         }
         throw Error(`Invalid menu: ${this.state.menu}`);
     }
 
     public renderViewWithSidebar(renderedView: JSX.Element, sidebarContent: JSX.Element) {
         return (
-            <div className={this.state.isDesktop ? "" : "is-mobile"}>
+            <div className={this.state.isDesktop ? 'page-container' : 'is-mobile'}>
                 <Sidebar
                     sidebar={sidebarContent}
                     docked={this.state.isDesktop}
                     open={this.state.sidebarOpen}
                     transitions={this.state.sidebarTransitionsEnabled}
                     onSetOpen={((e: boolean) => this.onSetSidebarOpen(e)) as any}
-                    sidebarClassName="sidebar"
-                    contentClassName="livesplit-container"
-                    overlayClassName="sidebar-overlay"
+                    sidebarClassName='sidebar'
+                    contentClassName='livesplit-container'
+                    overlayClassName='sidebar-overlay'
                 >
-                    {
-                        !this.state.isDesktop &&
-                        !this.state.sidebarOpen &&
+                    {!this.state.isDesktop && !this.state.sidebarOpen && (
                         <button
-                            aria-label="Open Sidebar"
-                            className="sidebar-button fa fa-bars"
+                            aria-label='Open Sidebar'
+                            className='sidebar-button fa fa-bars'
                             onClick={(() => this.onSetSidebarOpen(true)) as any}
                         />
-                    }
-                    <div
-                        className="view-container"
-                        ref={this.containerRef}
-                    >
+                    )}
+                    <div className='view-container' ref={this.containerRef}>
                         {renderedView}
                     </div>
                 </Sidebar>
@@ -343,7 +363,7 @@ export class LiveSplit extends React.Component<Props, State> {
             const layout = this.state.layout.settingsAsJson();
             await Storage.storeLayout(layout);
         } catch (_) {
-            toast.error("Failed to save the layout.");
+            toast.error('Failed to save the layout.');
         }
     }
 
@@ -363,7 +383,7 @@ export class LiveSplit extends React.Component<Props, State> {
 
     public exportLayout() {
         const layout = this.state.layout.settingsAsJson();
-        exportFile("layout.ls1l", JSON.stringify(layout, null, 4));
+        exportFile('layout.ls1l', JSON.stringify(layout, null, 4));
     }
 
     public loadDefaultLayout() {
@@ -374,7 +394,7 @@ export class LiveSplit extends React.Component<Props, State> {
     public openRunEditor({ splitsKey, run }: EditingInfo) {
         const editor = expect(
             RunEditor.new(run),
-            "The Run Editor should always be able to be opened.",
+            'The Run Editor should always be able to be opened.',
         );
         this.setState({
             menu: { kind: MenuKind.RunEditor, editor, splitsKey },
@@ -384,15 +404,15 @@ export class LiveSplit extends React.Component<Props, State> {
 
     public closeRunEditor(save: boolean) {
         if (this.state.menu.kind !== MenuKind.RunEditor) {
-            panic("No Run Editor to close");
+            panic('No Run Editor to close');
         }
         const { editor, splitsKey } = this.state.menu;
         const run = editor.close();
         if (save) {
             if (splitsKey == null) {
                 assertNull(
-                    this.writeWith((t) => t.setRun(run)),
-                    "The Run Editor should always return a valid Run.",
+                    this.writeWith(t => t.setRun(run)),
+                    'The Run Editor should always return a valid Run.',
                 );
             } else {
                 Storage.storeRunAndDispose(run, splitsKey);
@@ -418,7 +438,7 @@ export class LiveSplit extends React.Component<Props, State> {
         const layout = this.state.layout.clone();
         const editor = expect(
             LayoutEditor.new(layout),
-            "The Layout Editor should always be able to be opened.",
+            'The Layout Editor should always be able to be opened.',
         );
         this.setState({
             menu: { kind: MenuKind.LayoutEditor, editor },
@@ -428,7 +448,7 @@ export class LiveSplit extends React.Component<Props, State> {
 
     public closeLayoutEditor(save: boolean) {
         if (this.state.menu.kind !== MenuKind.LayoutEditor) {
-            panic("No Layout Editor to close.");
+            panic('No Layout Editor to close.');
         }
         const layoutEditor = this.state.menu.editor;
         const layout = layoutEditor.close();
@@ -456,7 +476,7 @@ export class LiveSplit extends React.Component<Props, State> {
         const menu = this.state.menu;
 
         if (menu.kind !== MenuKind.SettingsEditor) {
-            panic("No Settings Editor to close.");
+            panic('No Settings Editor to close.');
         }
 
         if (save) {
@@ -464,7 +484,7 @@ export class LiveSplit extends React.Component<Props, State> {
                 const hotkeys = menu.config.asJson();
                 await Storage.storeHotkeys(hotkeys);
             } catch (_) {
-                toast.error("Failed to save the settings.");
+                toast.error('Failed to save the settings.');
             }
             this.state.hotkeySystem.setConfig(menu.config);
         } else {
@@ -484,7 +504,7 @@ export class LiveSplit extends React.Component<Props, State> {
 
     private getDefaultRun() {
         const run = Run.new();
-        run.pushSegment(Segment.new("Time"));
+        run.pushSegment(Segment.new('Time'));
         return run;
     }
 
@@ -512,7 +532,9 @@ export class LiveSplit extends React.Component<Props, State> {
         let layout = null;
         try {
             layout = Layout.parseJson(JSON.parse(file));
-        } catch (_) { /* Failed to load the layout */ }
+        } catch (_) {
+            /* Failed to load the layout */
+        }
         if (layout === null) {
             layout = Layout.parseOriginalLivesplitString(file);
         }
@@ -520,7 +542,9 @@ export class LiveSplit extends React.Component<Props, State> {
             this.setLayout(layout);
             return;
         }
-        throw Error("The layout could not be loaded. This may not be a valid LiveSplit or LiveSplit One Layout.");
+        throw Error(
+            'The layout could not be loaded. This may not be a valid LiveSplit or LiveSplit One Layout.',
+        );
     }
 
     private setLayout(layout: Layout) {
@@ -533,7 +557,7 @@ export class LiveSplit extends React.Component<Props, State> {
 
     private setRun(run: Run, callback: () => void) {
         maybeDisposeAndThen(
-            this.writeWith((t) => t.setRun(run)),
+            this.writeWith(t => t.setRun(run)),
             callback,
         );
         this.setSplitsKey(undefined);
@@ -541,10 +565,12 @@ export class LiveSplit extends React.Component<Props, State> {
 
     private importSplitsFromArrayBuffer(buffer: [ArrayBuffer, File]) {
         const [file] = buffer;
-        Run.parseArray(new Uint8Array(file), "").with((result) => {
+        Run.parseArray(new Uint8Array(file), '').with(result => {
             if (result.parsedSuccessfully()) {
                 const run = result.unwrap();
-                this.setRun(run, () => { throw Error("Empty Splits are not supported."); });
+                this.setRun(run, () => {
+                    throw Error('Empty Splits are not supported.');
+                });
             } else {
                 throw Error("Couldn't parse the splits.");
             }
@@ -554,9 +580,9 @@ export class LiveSplit extends React.Component<Props, State> {
     private async loadFromSplitsIO(id: string) {
         try {
             const run = await SplitsIO.downloadById(id);
-            this.setRun(run, () => toast.error("The downloaded splits are not valid."));
+            this.setRun(run, () => toast.error('The downloaded splits are not valid.'));
         } catch (_) {
-            toast.error("Failed to download the splits.");
+            toast.error('Failed to download the splits.');
         }
     }
 
